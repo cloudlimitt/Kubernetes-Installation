@@ -40,7 +40,7 @@ systemctl enable kubelet
 # Initialize the cluster using the IP range for Flannel.
 kubeadm init --pod-network-cidr=10.244.0.0/16
 
-# Copy the kubeadmn join command output  that is in the output. We will need this later.\
+# Copy the kubeadmn join command output. We will need this later.
 
 # Exit sudo and copy the admin.conf to your home directory and take ownership.
 mkdir -p $HOME/.kube

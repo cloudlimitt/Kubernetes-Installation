@@ -9,20 +9,21 @@ spec:
     matchLabels:
       webserver: nginx
   template:
-    labels:
-      webserver: nginx
-  spec:
-    containers:
-    - name: nginx-webserver
-      image: nginxdemos/hello
-      ports:
-      - containerPort: 80
-        protocol: TCP
-      volumeMounts:
+    metadata:
+      labels:
+        webserver: nginx
+    spec:
+      containers:
       - name: nginx-webserver
-        mountPath: /var/www/index.html
-    volumes:
-    - name: nginx-webserver
-      hostpath:
-      path: /var/www/index.html
-      type: file
+        image: nginxdemos/hello
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        volumeMounts:
+        - name: nginx-webserver
+          mountPath: /var/www/index.html
+      volumes:
+      - name: nginx-webserver
+        hostpath:
+          path: /var/www/index.html
+          type: File

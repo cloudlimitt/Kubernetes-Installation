@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    webserver: nginx
+  name: nginx
+spec:
+  selector:
+    matchLabels:
+      webserver: nginx
+  template:
+    labels:
+      webserver: nginx
+  spec:
+    containers:
+    - name: nginx-webserver
+      image: nginxdemos/hello
+      ports:
+      - containerPort: 80
+        protocol: TCP
+      volumeMounts:
+      - name: nginx-webserver
+        mountPath: /var/www/index.html
+    volumes:
+    - name: nginx-webserver
+      hostpath:
+      path: /var/www/index.html
+      type: file

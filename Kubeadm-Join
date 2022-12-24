@@ -1,0 +1,13 @@
+kubeadm init phase upload-certs --upload-certs
+
+kubeadm  token create --certificate-key e286df2eb53a6b3c282fc810e2786429110c0a0915c34b8303dd418e7c378fd1 --print-join-command
+
+Join additional master nodes
+kubeadm join 192.168.56.10:6443 --token un6ict.n2bbprvg00x21wma \ 
+--discovery-token-ca-cert-hash sha256:6f0b525eb51fe90ec91edf242870b778722c5aa9ec3ae78124a1a0e78b108578 \
+--certificate-key e286df2eb53a6b3c282fc810e2786429110c0a0915c34b8303dd418e7c378fd1 \
+--control-plane 192.168.56.10:6443  --apiserver-advertise-address 192.168.56.16  
+
+Join Additional worker nodes
+kubeadm join 192.168.56.10:6443 --token un6ict.n2bbprvg00x21wma \ 
+--discovery-token-ca-cert-hash sha256:6f0b525eb51fe90ec91edf242870b778722c5aa9ec3ae78124a1a0e78b108578  

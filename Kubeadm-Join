@@ -9,5 +9,5 @@ kubeadm join 192.168.56.10:6443 --token un6ict.n2bbprvg00x21wma \
 --control-plane 192.168.56.10:6443  --apiserver-advertise-address 192.168.56.16  
 
 Join Additional worker nodes
-kubeadm join 192.168.56.10:6443 --token un6ict.n2bbprvg00x21wma \ 
---discovery-token-ca-cert-hash sha256:6f0b525eb51fe90ec91edf242870b778722c5aa9ec3ae78124a1a0e78b108578  
+kubeadm join 192.168.56.10:6443 --token w2swyp.2j1cs52sz8ihceyi --discovery-token-ca-cert-hash sha256:e7151e9aee4f7d62c89cf021cf2075ce7720c9cf735236044d4fe69e203
+20da4 --apiserver-advertise-address 192.168.56.14 --v=10

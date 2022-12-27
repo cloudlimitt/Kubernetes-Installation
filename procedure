@@ -13,6 +13,10 @@ yum install -y yum-utils device-mapper-persistent-data lvm2
 yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 yum install -y docker-ce
 
+# disable "disabled_plugins = ["cri"]"
+cat /etc/containerd/config.toml 
+#disabled_plugins = ["cri"]
+
 # Set the cgroup driver for Docker to systemd, then reload systemd, enable and start Docker
 sed -i '/^ExecStart/ s/$/ --exec-opt native.cgroupdriver=systemd/' /usr/lib/systemd/system/docker.service
 systemctl daemon-reload
@@ -25,8 +29,7 @@ cat << EOF > /etc/yum.repos.d/kubernetes.repo
 > baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-$basearch
 > enabled=1
 > gpgcheck=1
-> repo_gpgcheck=1
-> gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+> gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 > exclude=kubelet kubeadm kubectl
 > EOF
 

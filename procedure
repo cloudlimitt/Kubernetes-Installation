@@ -65,8 +65,9 @@ mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-# Deploy Flannel.
-kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+# Deploy Flannel. (For Kubernetes v1.17+)
+wget https://raw.githubusercontent.com/flannel-io/flannel/v0.20.2/Documentation/kube-flannel.yml
+ustom podCIDR (not 10.244.0.0/16) you first need to download the above manifest and modify the network to match your one.
 
 # Check the cluster state.
 kubectl get pods --all-namespaces

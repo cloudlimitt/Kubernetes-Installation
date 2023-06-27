@@ -49,6 +49,8 @@ sudo firewall-cmd --permanent --add-port=10251/tcp
 sudo firewall-cmd --permanent --add-port=10252/tcp
 sudo firewall-cmd --permanent --add-port=179/tcp
 sudo firewall-cmd --permanent --add-port=4789/udp
+sudo firewall-cmd --permanent --add-port=6783/udp
+sudo firewall-cmd --permanent --add-port=6784/udp
 sudo firewall-cmd --reload
 
 # Enable the kubelet service. The kubelet service will fail to start until the cluster is initialized, this is expected.

@@ -15,7 +15,7 @@ yum install -y docker-ce
 
 # disable "disabled_plugins = ["cri"]"
 cat /etc/containerd/config.toml 
-#disabled_plugins = ["cri"]
+sed -i -e "s/^disabled_plugins/#disabled_plugins/" /etc/containerd/config.toml 
 
 # Set the cgroup driver for Docker to systemd, then reload systemd, enable and start Docker
 sed -i '/^ExecStart/ s/$/ --exec-opt native.cgroupdriver=systemd/' /usr/lib/systemd/system/docker.service

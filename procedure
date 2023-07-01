@@ -63,10 +63,9 @@ kubeadm init --pod-network-cidr=10.244.0.0/16
 # multiple interface
  kubeadm init --apiserver-advertise-address=<host_only_adaptop_IP 
 # multi node installation
- kubeadm init --control-plane-endpoint=192.168.56.10:6443 \
-  --service-cidr=20.0.0.0/12  --service-dns-domain=cloudlimitt.cf \
-  --pod-network-cidr=30.0.0.0/16 --apiserver-advertise-address=192.168.56.11 \
-  --upload-certs --token-ttl  0 --v=10
+kubeadm init --control-plane-endpoint=192.168.1.210:6443 \
+--service-cidr=20.0.0.0/12  --service-dns-domain=okd.local \
+--pod-network-cidr=30.0.0.0/16 --apiserver-advertise-address=192.168.1.200 --upload-certs --v=3
 
 # Copy the kubeadmn join command output. We will need this later.
 

@@ -51,6 +51,7 @@ sudo firewall-cmd --permanent --add-port=179/tcp
 sudo firewall-cmd --permanent --add-port=4789/udp
 sudo firewall-cmd --permanent --add-port=6783/udp
 sudo firewall-cmd --permanent --add-port=6784/udp
+sudo firewall-cmd --permanent --add-masquerade
 sudo firewall-cmd --reload
 
 # Enable the kubelet service. The kubelet service will fail to start until the cluster is initialized, this is expected.
@@ -74,7 +75,7 @@ mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-# Deploy Flannel. (For Kubernetes v1.17+)
+# Deploy Flannel. (For Kubernetes v1.17+) or Weave-net
 wget https://raw.githubusercontent.com/flannel-io/flannel/v0.20.2/Documentation/kube-flannel.yml
 ustom podCIDR (not 10.244.0.0/16) you first need to download the above manifest and modify the network to match your one.
 

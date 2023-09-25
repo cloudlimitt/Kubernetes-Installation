@@ -14,3 +14,33 @@ type: kubernetes.io/service-account-token
 ######################
 kubectl get secret admin-user -n kubernetes-dashboard -o jsonpath={".data.token"} | base64 -d
 
+Ingress 
+======
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+#    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/issuer: ca-issuer
+  name: dashboard-ingress
+  namespace: kubernetes-dashboard 
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - dashboard.okd.local
+    secretName: wild-card-tls
+  rules:
+  - host: dashboard.okd.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: kubernetes-dashboard
+            port:
+              number: 443
+        path: /
+        pathType: Prefix
+status:
+  loadBalancer: {}

@@ -57,6 +57,7 @@ sudo firewall-cmd --permanent --add-port=5473/tcp
 sudo firewall-cmd --permanent --add-masquerade
 sudo firewall-cmd --reload
 
+
 # Enable the kubelet service. The kubelet service will fail to start until the cluster is initialized, this is expected.
 systemctl enable kubelet
 
@@ -88,3 +89,4 @@ Note: Complete the following steps on the NODES ONLY!
 
 # Run the join command that you copied earlier, this requires running the command as sudo on the nodes. Then check your nodes from the master.
 kubectl get nodes
+crictl config --set runtime-endpoint=unix:///run/containerd/containerd.sock

@@ -5,6 +5,7 @@ sed -i --follow-symlinks 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig
 # Enable the br_netfilter module for cluster communication.
 modprobe br_netfilter
 echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables
+echo '1' > /proc/sys/net/ipv4/ip_forward
 
 # Ensure that the Docker dependencies are satisfied.
 yum install -y yum-utils device-mapper-persistent-data lvm2

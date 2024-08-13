@@ -69,13 +69,17 @@ kubeadm init --pod-network-cidr=10.244.0.0/16
  kubeadm init --apiserver-advertise-address=<host_only_adaptop_IP 
 # multi node installation
 kubeadm init --apiserver-advertise-address=192.168.1.200 --control-plane-endpoint=192.168.1.210:6443 \
---node-name=okd-master --pod-network-cidr=30.0.0.0/16 --service-cidr=10.96.0.0/12 --service-dns-domain=okd.local --upload-certs
+--pod-network-cidr=30.0.0.0/16 --upload-certs
 
 # Copy the kubeadmn join command output. We will need this later.
-kubeadm join 192.168.1.210:6443 --token zqkcdd.81l24d1ns8qxkbn8  \
---discovery-token-ca-cert-hash sha256:391b849845559af92e3db8804134513321a4801c08eb8c29fc88d7ab452123f6  \
---control-plane --certificate-key 2e7b177f4f4a9e940c0242c062fbe777194678246154bdf0395833b81ef7327a \
---apiserver-advertise-address=192.168.1.201 --node-name=okd-master1
+  kubeadm join 192.168.1.210:6443 --token 5qlz3q.p592czieztpd4kzr \
+	--discovery-token-ca-cert-hash sha256:9bf9d3ff75952706d820adb9e699e7ef9e8bb70ff0fa2a2f09f11a704a9f6fe3 \
+	--control-plane --certificate-key 1a44e83b5ade0ffd157d00e0e87b3e6a9a52ec477520ae6a575419297b07152c \
+--apiserver-advertise-address=192.168.1.201
+Worker node - 
+kubeadm join 192.168.1.210:6443 --token 5qlz3q.p592czieztpd4kzr \
+	--discovery-token-ca-cert-hash sha256:9bf9d3ff75952706d820adb9e699e7ef9e8bb70ff0fa2a2f09f11a704a9f6fe3 --apiserver-advertise-address=192.168.1.203
+
 
 # Exit sudo and copy the admin.conf to your home directory and take ownership.
 mkdir -p $HOME/.kube

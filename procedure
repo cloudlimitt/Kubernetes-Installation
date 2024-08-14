@@ -54,6 +54,14 @@ sudo firewall-cmd --permanent --add-port=6783/udp
 sudo firewall-cmd --permanent --add-port=6784/udp
 sudo firewall-cmd --permanent --add-port=10255/tcp
 sudo firewall-cmd --permanent --add-port=5473/tcp
+sudo firewall-cmd --permanent --add-port=53/tcp
+sudo firewall-cmd --permanent --add-port=53/udp
+sudo firewall-cmd --permanent --add-port=22623/tcp
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --permanent --add-port=3389/tcp
+sudo firewall-cmd --permanent --add-port=9000/tcp
+firewall-cmd --add-source=10.0.0.0/24
+firewall-cmd --add-source=50.0.0.0/24
 sudo firewall-cmd --permanent --add-masquerade
 sudo firewall-cmd --reload
 

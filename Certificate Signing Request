@@ -1,0 +1,17 @@
+Certificate Signing Request
+==============================
+How to issue a certificate for a user 
+1. openssl genrsa -out test-user.key 2048
+2. openssl req -new -key test-user.key -out test-user.csr -subj "/CN=test-user"
+3. cat test-user.csr |base64 |tr -d "\n"
+
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: test-user
+spec:
+  request: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQ1dUQ0NBVUVDQVFBd0ZERVNNQkFHQTFVRUF3d0pkR1Z6ZEMxMWMyVnlNSUlCSWpBTkJna3Foa2lHOXcwQgpBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF2Q0lmeWkwSnNVZFB2NjN0dDdCLzdRU3RQTTlxNjZONTU3TmhxWWl3Cmxodko4bXFBd2lFQVBoNTEwb2UvdjJwL2w5ZVFFaTh6S045bXNtRnkvUnhIYkd2U291cWRSRnkrbUJocHBvWFkKdmkrT2d5UFhaK0c2bmd1Qno0clhodGZ6K3RMVVR2a1VuSUFaR3E0TkF2K3NnMWhlcndXbWh1NVY2QWEvaFBIRwo5aEQweWdHSHJrS3RwMTlTL2dDTUY3bDVnTlRGRzY0ZmMzNzBSNktzcFpvc0ZnUWQrdXkyZVJCMlhrOU8wNmNLClVGakN1cGgrS1V1RWQ5U0VkUC9SUGhjWkw5MWVnSkpkeE9LTnUxdUtlalU5bk1vZnFuc05hTlRwT3ZmbWNFZHkKcXo3RDZKdVNBazZWVjgyUGtZOWlhbU5WcFczemtLTkRzS21yOXQ2ZVBNKzI0UUlEQVFBQm9BQXdEUVlKS29aSQpodmNOQVFFTEJRQURnZ0VCQUkxZzdGMStLTk9wbXNyNklzVjJRRWpvMi93aDdueHg1N1pHM3ppSG9KUlo3Znc0CmMxSlJlblUycG41MzBvOUZrYVZveVBSVGVBOGx4RWI2MkdpVDhKNmYyRzJxWWV4TVlsWG5hR2xNdzZGQUpsVVUKM3F3dmlCRUdHYzg1MnJNdW51ekVQWDFrSzdZQ20wRENDb1pYemlDM2N4c2tSTFgyQmhVZ0NUU0hkdlVyUlBtSgp0U0FsTUNlSWFCcCtWNW9JNTlnYkowY3ZQODl3YnhramsrbzczdE0xVE1ESjVLZ3B1Vy94K3NaQ25aVWRFSlRjCnJVK2NtcEVUSmErR3lXOEMxTjBYL1RRdjgvYVZjdUdBb3MwRmFJN0NrdXZPVEJJRGx2KzFHMldKbGZaWVR4QUgKdWEvaW5FcFdmL0F0MVdLWUNzMXpBR2N6OVF6S0F5djR1UXNQRDhFPQotLS0tLUVORCBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0K
+  signerName: kubernetes.io/kube-apiserver-client
+  expirationSeconds: 86400  # one day
+  usages:
+  - client auth

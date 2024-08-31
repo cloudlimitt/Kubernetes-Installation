@@ -28,4 +28,49 @@ cat << EOF | kubectl apply -f -
 >   usages:
 >   - client auth
 > EOF
-certi
+==================
+Approve the CSR:
+
+kubectl certificate approve test-user
+====================================
+Get the certificate
+
+Retrieve the certificate from the CSR:
+
+kubectl get csr/test-user -o yaml
+
+The certificate value is in Base64-encoded format under status.certificate.
+
+Export the issued certificate from the CertificateSigningRequest.
+
+kubectl get csr myuser -o jsonpath='{.status.certificate}'| base64 -d > test-user.crt
+========================================================================
+Create Role and RoleBinding
+
+With the certificate created it is time to define the Role and RoleBinding for this user to access Kubernetes cluster resources.
+
+This is a sample command to create a Role for this new user:
+
+kubectl create role developer --verb=create --verb=get --verb=list --verb=update --verb=delete --resource=pods
+
+This is a sample command to create a RoleBinding for this new user:
+
+kubectl create rolebinding developer-binding-myuser --role=developer --user=test-user
+============================================================================================================
+Add to kubeconfig
+
+The last step is to add this user into the kubeconfig file.
+
+First, you need to add new credentials:
+
+kubectl config set-credentials test-user --client-key=test-user.key --client-certificate=test-user.crt --embed-certs=true
+
+Then, you need to add the context:
+
+kubectl config set-context test-user --cluster=kubernetes --user=test-user
+
+To test it, change the context to myuser:
+
+kubectl config use-context test-user
+=========================================================
+

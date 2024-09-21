@@ -22,4 +22,5 @@ spec:
   dnsNames:
   - "*.okd.local"
   issuerRef:
+    kind: ClusterIssuer
     name: selfsigned-issuer

@@ -4,8 +4,8 @@ metadata:
   name: kubernetes-dashboard-cert
   namespace: kubernetes-dashboard 
 spec:
-  secretName: kubernetes-dashboard-cert-tls
-  commonName: "*.okd.local"
+  secretName: dashboard-cert-secret
+  commonName: "dashboard.okd.local"
   privateKey:
     rotationPolicy: Always
   isCA: false

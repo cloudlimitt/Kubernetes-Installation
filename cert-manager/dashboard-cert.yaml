@@ -23,4 +23,4 @@ spec:
   - "*.okd.local"
   issuerRef:
     kind: ClusterIssuer
-    name: selfsigned-issuer
+    name: ca-issuer

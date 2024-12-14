@@ -4,12 +4,8 @@ metadata:
   annotations:
     cert-manager.io/issuer: ca-issuer
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-  creationTimestamp: "2024-10-05T04:50:28Z"
-  generation: 4
   name: argocd-ingress
   namespace: argocd
-  resourceVersion: "403954"
-  uid: 29053df3-8c9a-41bf-baa2-eed3e0e55e80
 spec:
   ingressClassName: nginx
   rules:
@@ -27,7 +23,3 @@ spec:
   - hosts:
     - argocd.okd.local
     secretName: argocd-server-tls
-status:
-  loadBalancer:
-    ingress:
-    - ip: 192.168.1.220

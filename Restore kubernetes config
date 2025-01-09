@@ -30,3 +30,11 @@ $ etcd \
   --listen-client-urls http://host3:2379 \
   --advertise-client-urls http://host3:2379 \
   --listen-peer-urls http://host3:2380 &
+=============================================
+view etcd members 
+# kubectl exec etcd-okd-master1 -n kube-system -- etcdctl --cacert /etc/kubernetes/pki/etcd/ca.crt \
+--cert /etc/kubernetes/pki/etcd/peer.crt --key /etc/kubernetes/pki/etcd/peer.key member list
+=============================================
+remove members from etcd
+kubectl exec etcd-okd-master -n kube-system -- etcdctl --cacert /etc/kubernetes/pki/etcd/ca.crt \
+--cert /etc/kubernetes/pki/etcd/peer.crt --key /etc/kubernetes/pki/etcd/peer.key member remove 8769d38017e30003

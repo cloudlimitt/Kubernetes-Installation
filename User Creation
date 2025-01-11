@@ -1,6 +1,7 @@
 Certificate Signing Request
 ==============================
 How to issue a certificate for a user 
+
 1. openssl genrsa -out test-user.key 2048
 2. openssl req -new -key test-user.key -out test-user.csr -subj "/CN=test-user"
 3. cat test-user.csr |base64 |tr -d "\n"

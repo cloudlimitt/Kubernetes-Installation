@@ -1,0 +1,27 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ingress-nginx-cert
+  namespace: ingress-nginx
+spec:
+  secretName: ingress-nginx-cert-secret
+  commonName: "*.okd.local"
+  privateKey:
+    rotationPolicy: Always
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  duration: 8760h # 365d
+  renewBefore: 360h # 15d
+  dnsNames:
+  - "*.okd.local"
+  - svc.cluster.local
+  issuerRef:
+    kind: ClusterIssuer
+    name: ca-issuer

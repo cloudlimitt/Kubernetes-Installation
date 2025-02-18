@@ -5,7 +5,7 @@ metadata:
   namespace: openshift-config
 spec:
   secretName: api-cert-self-secret
-  commonName: "*.apps-crc.testing"
+  commonName: "*.api.okd.local"
   privateKey:
     rotationPolicy: Always
   isCA: false
@@ -20,7 +20,6 @@ spec:
   duration: 8760h # 365d
   renewBefore: 360h # 15d
   dnsNames:
-  - "*.okd.local"
   issuerRef:
     kind: ClusterIssuer
     name: ca-issuer

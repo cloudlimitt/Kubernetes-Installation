@@ -19,7 +19,6 @@ spec:
     - client auth
   duration: 8760h # 365d
   renewBefore: 360h # 15d
-  dnsNames:
   issuerRef:
     kind: ClusterIssuer
     name: ca-issuer

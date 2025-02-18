@@ -5,7 +5,7 @@ metadata:
   namespace: openshift-config
 spec:
   secretName: api-cert-self-secret
-  commonName: "*.api.okd.local"
+  commonName: "api.okd.local"
   privateKey:
     rotationPolicy: Always
   isCA: false

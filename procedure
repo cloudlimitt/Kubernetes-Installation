@@ -61,9 +61,10 @@ kubeadm init --apiserver-advertise-address=192.168.1.200 --control-plane-endpoin
 --pod-network-cidr=30.0.0.0/16 --upload-certs
 
 # Copy the kubeadmn join command output. We will need this later.
-kubeadm join 192.168.2.199:6443 --token 4xdpt8.3fowhk15t3thh1c2 \
-        --discovery-token-ca-cert-hash sha256:e0582a54dc73a5b60d7fbf0cd1171dc4d7946abea52b1098ddcd61b690db6e92 \
-        --control-plane --certificate-key b9ba1cd35359eda0008bdaf73dca97306a6c4c68568c61ca65ce98c88529358a --apiserver-advertise-address=192.168.1.201 
+  kubeadm join 192.168.2.199:6443 --token kdvn40.0n8l1i5orh6kc6bt \
+        --discovery-token-ca-cert-hash sha256:6c2869f1b11b290cf3fe35fe0462a83819c223ab048fa2ca1254c8eacf96f9a7 \
+        --control-plane --certificate-key 52ae1a2ca85fbbe06193a425ecd6c7b178fe524a9efac47d64440e2e1e831f99 --apiserver-advertise-address=192.168.2.201 --v=10
+
 
 Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
 As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
@@ -71,8 +72,10 @@ As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you c
 
 Then you can join any number of worker nodes by running the following on each as root:
 
-kubeadm join 192.168.2.199:6443 --token 4xdpt8.3fowhk15t3thh1c2 \
-        --discovery-token-ca-cert-hash sha256:e0582a54dc73a5b60d7fbf0cd1171dc4d7946abea52b1098ddcd61b690db6e92
+kubeadm join 192.168.2.199:6443 --token kdvn40.0n8l1i5orh6kc6bt \
+        --discovery-token-ca-cert-hash sha256:6c2869f1b11b290cf3fe35fe0462a83819c223ab048fa2ca1254c8eacf96f9a7 --apiserver-advertise-address=192.168.2.203 --v=10
+
+
 
 
 

@@ -80,13 +80,19 @@ kubeadm init --apiserver-advertise-address=192.168.1.200 --control-plane-endpoin
 --pod-network-cidr=30.0.0.0/16 --upload-certs
 
 # Copy the kubeadmn join command output. We will need this later.
-  kubeadm join 192.168.1.210:6443 --token 5qlz3q.p592czieztpd4kzr \
-	--discovery-token-ca-cert-hash sha256:9bf9d3ff75952706d820adb9e699e7ef9e8bb70ff0fa2a2f09f11a704a9f6fe3 \
-	--control-plane --certificate-key 1a44e83b5ade0ffd157d00e0e87b3e6a9a52ec477520ae6a575419297b07152c \
---apiserver-advertise-address=192.168.1.201
-Worker node - 
-kubeadm join 192.168.1.210:6443 --token 5qlz3q.p592czieztpd4kzr \
-	--discovery-token-ca-cert-hash sha256:9bf9d3ff75952706d820adb9e699e7ef9e8bb70ff0fa2a2f09f11a704a9f6fe3 --apiserver-advertise-address=192.168.1.203
+kubeadm join 192.168.2.199:6443 --token 4xdpt8.3fowhk15t3thh1c2 \
+        --discovery-token-ca-cert-hash sha256:e0582a54dc73a5b60d7fbf0cd1171dc4d7946abea52b1098ddcd61b690db6e92 \
+        --control-plane --certificate-key b9ba1cd35359eda0008bdaf73dca97306a6c4c68568c61ca65ce98c88529358a --apiserver-advertise-address=192.168.1.201 
+
+Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
+As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
+"kubeadm init phase upload-certs --upload-certs" to reload certs afterward.
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.2.199:6443 --token 4xdpt8.3fowhk15t3thh1c2 \
+        --discovery-token-ca-cert-hash sha256:e0582a54dc73a5b60d7fbf0cd1171dc4d7946abea52b1098ddcd61b690db6e92
+
 
 
 # Exit sudo and copy the admin.conf to your home directory and take ownership.

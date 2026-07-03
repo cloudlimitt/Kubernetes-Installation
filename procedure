@@ -1,3 +1,5 @@
+https://devcloudjourney.hashnode.dev/install-a-kubernetes-cluster-on-centos-9 - link
+
 # Disable SELinux.
 setenforce 0
 sed -i --follow-symlinks 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
@@ -46,25 +48,34 @@ firewall-cmd --add-source=50.0.0.0/24
 sudo firewall-cmd --permanent --add-masquerade
 sudo firewall-cmd --reload
 
+=======================================
+sudo setenforce 0
+sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+systemctl start containerd
+route add default gw 192.168.2.1
+nmcli con mod enp0s3 ipv4.route-metric 100
+nmcli con mod enp0s8 ipv4.route-metric 600
+systemctl restart NetworkManager
 
-# Enable the kubelet service. The kubelet service will fail to start until the cluster is initialized, this is expected.
-systemctl enable kubelet
+To start using your cluster, you need to run the following as a regular user:
 
-                            Complete the following section on the MASTER ONLY!
-# Initialize the cluster using the IP range for Flannel.
-kubeadm init --pod-network-cidr=10.244.0.0/16
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-# multiple interface
- kubeadm init --apiserver-advertise-address=<host_only_adaptop_IP 
-# multi node installation
-kubeadm init --apiserver-advertise-address=192.168.1.200 --control-plane-endpoint=192.168.1.210:6443 \
---pod-network-cidr=30.0.0.0/16 --upload-certs
+Alternatively, if you are the root user, you can run:
 
-# Copy the kubeadmn join command output. We will need this later.
-  kubeadm join 192.168.2.199:6443 --token kdvn40.0n8l1i5orh6kc6bt \
-        --discovery-token-ca-cert-hash sha256:6c2869f1b11b290cf3fe35fe0462a83819c223ab048fa2ca1254c8eacf96f9a7 \
-        --control-plane --certificate-key 52ae1a2ca85fbbe06193a425ecd6c7b178fe524a9efac47d64440e2e1e831f99 --apiserver-advertise-address=192.168.2.201 --v=10
+  export KUBECONFIG=/etc/kubernetes/admin.conf
 
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+You can now join any number of control-plane nodes running the following command on each as root:
+
+  kubeadm join 192.168.2.10:6443 --token yf49xo.r0j1wh2air4c6q9m \
+        --discovery-token-ca-cert-hash sha256:a6dda61b83da6994e8d3f86af15bb25671ba54fb76bf5885cf1c38c0f0f25353 \
+        --control-plane --certificate-key b14f22311413ccd051ba06261dcf795e6fbabb69c0d071b9ebcdfe1096811f1f
 
 Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
 As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
@@ -72,12 +83,38 @@ As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you c
 
 Then you can join any number of worker nodes by running the following on each as root:
 
-kubeadm join 192.168.2.199:6443 --token kdvn40.0n8l1i5orh6kc6bt \
-        --discovery-token-ca-cert-hash sha256:6c2869f1b11b290cf3fe35fe0462a83819c223ab048fa2ca1254c8eacf96f9a7 --apiserver-advertise-address=192.168.2.203 --v=10
+kubeadm join 192.168.2.10:6443 --token yf49xo.r0j1wh2air4c6q9m \
+        --discovery-token-ca-cert-hash sha256:a6dda61b83da6994e8d3f86af15bb25671ba54fb76bf5885cf1c38c0f0f25353
 
 
+kubeadm-config.yaml
+---------------------------
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
 
+kubernetesVersion: 1.35.6
 
+controlPlaneEndpoint: "192.168.2.10:6443"
+
+networking:
+  podSubnet: "192.168.0.0/16"
+  serviceSubnet: "10.96.0.0/12"
+
+apiServer:
+  certSANs:
+    - "192.168.2.10"
+    - "192.168.2.11"
+    - "192.168.2.12"
+    - "192.168.2.13"
+
+controllerManager: {}
+scheduler: {}
+
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+
+=========================================================================================
 
 # Exit sudo and copy the admin.conf to your home directory and take ownership.
 mkdir -p $HOME/.kube

@@ -1,0 +1,280 @@
+Rook Ceph Kubernetes Cheat Sheet
+1. Cluster Status
+kubectl get cephcluster -A
+
+Detailed:
+
+kubectl -n rook-ceph describe cephcluster rook-ceph
+
+Ceph health:
+
+kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- ceph status
+kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- ceph health detail
+Rook Ceph Pods
+
+List all Rook pods:
+
+kubectl -n rook-ceph get pods -o wide
+
+Watch:
+
+kubectl -n rook-ceph get pods -w
+
+Check OSD pods:
+
+kubectl -n rook-ceph get pods | grep osd
+
+Check MON:
+
+kubectl -n rook-ceph get pods | grep mon
+
+Check MGR:
+
+kubectl -n rook-ceph get pods | grep mgr
+Ceph Toolbox
+
+Enter toolbox:
+
+kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- bash
+
+Exit:
+
+exit
+Ceph Commands (inside toolbox)
+Overall status
+ceph -s
+
+or
+
+ceph status
+Health
+ceph health
+ceph health detail
+Cluster FSID
+ceph fsid
+Monitors
+ceph mon stat
+Managers
+ceph mgr stat
+OSD Management
+
+List OSDs:
+
+ceph osd tree
+
+OSD status:
+
+ceph osd status
+
+OSD utilization:
+
+ceph osd df
+
+Show OSD metadata:
+
+ceph osd metadata
+
+Check OSD count:
+
+ceph osd ls
+
+Restart OSD pod:
+
+kubectl -n rook-ceph delete pod rook-ceph-osd-<id>
+
+Example:
+
+kubectl -n rook-ceph delete pod rook-ceph-osd-0
+Pools
+
+List pools:
+
+ceph osd pool ls
+
+Pool details:
+
+ceph osd pool ls detail
+
+Pool usage:
+
+ceph df
+RBD Commands
+
+List images:
+
+rbd ls -p replicapool
+
+Show image info:
+
+rbd info -p replicapool <image-name>
+
+List snapshots:
+
+rbd snap ls -p replicapool <image-name>
+Kubernetes Storage
+Storage Classes
+
+List:
+
+kubectl get storageclass
+
+Details:
+
+kubectl describe storageclass rook-ceph-block
+PVC
+
+List PVC:
+
+kubectl get pvc -A
+
+Details:
+
+kubectl describe pvc <pvc-name>
+
+List PV:
+
+kubectl get pv
+CSI Troubleshooting
+
+Check CSI pods:
+
+kubectl -n rook-ceph get pods | grep csi
+
+RBD CSI logs:
+
+kubectl -n rook-ceph logs \
+deploy/csi-rbdplugin-provisioner \
+-c csi-provisioner
+
+Node plugin logs:
+
+kubectl -n rook-ceph logs \
+daemonset/csi-rbdplugin \
+-c csi-node-driver-registrar
+OSD Provisioning Troubleshooting
+
+Check prepare jobs:
+
+kubectl -n rook-ceph get jobs
+
+Logs:
+
+kubectl -n rook-ceph logs \
+job/rook-ceph-osd-prepare-<node-name>
+
+Example:
+
+kubectl -n rook-ceph logs \
+job/rook-ceph-osd-prepare-kube-worker1
+
+Delete failed prepare jobs:
+
+kubectl -n rook-ceph delete job \
+rook-ceph-osd-prepare-<node>
+Device Discovery
+
+Check Ceph devices:
+
+kubectl -n rook-ceph get cephcluster rook-ceph -o yaml
+
+On worker nodes:
+
+lsblk
+
+Check disks:
+
+fdisk -l
+
+Check signatures:
+
+blkid /dev/sdb
+
+Clear old Ceph data:
+
+⚠️ DESTROYS DATA
+
+dd if=/dev/zero of=/dev/sdb bs=100M status=progress
+sync
+Ceph Logs
+
+Operator logs:
+
+kubectl -n rook-ceph logs deploy/rook-ceph-operator
+
+OSD logs:
+
+kubectl -n rook-ceph logs rook-ceph-osd-0
+
+MON logs:
+
+kubectl -n rook-ceph logs rook-ceph-mon-a
+Restart Rook Components
+
+Restart operator:
+
+kubectl -n rook-ceph rollout restart deploy rook-ceph-operator
+
+Restart CSI:
+
+kubectl -n rook-ceph rollout restart deploy csi-rbdplugin-provisioner
+
+Restart all Ceph pods:
+
+kubectl -n rook-ceph delete pod --all
+
+(Kubernetes recreates them automatically.)
+
+Node / Disk Expansion
+
+Check Ceph cluster:
+
+ceph osd tree
+
+Add new disk:
+
+Attach disk to worker
+Verify:
+lsblk
+Let Rook discover:
+kubectl -n rook-ceph get pods | grep prepare
+Useful Kubernetes Commands
+
+Events:
+
+kubectl -n rook-ceph get events --sort-by=.lastTimestamp
+
+All resources:
+
+kubectl -n rook-ceph get all
+
+Storage objects:
+
+kubectl get sc,pv,pvc -A
+Emergency Checks
+
+Ceph not healthy:
+
+ceph -s
+ceph health detail
+ceph osd tree
+ceph df
+
+PVC stuck Pending:
+
+kubectl describe pvc <name>
+
+Check CSI:
+
+kubectl -n rook-ceph get pods | grep csi
+
+OSD not creating:
+
+kubectl -n rook-ceph logs job/rook-ceph-osd-prepare-<node>
+Your current environment summary
+Kubernetes: v1.35.6
+Rook:       v1.20.2
+Ceph:       v20.2.2 Tentacle
+Cluster:    rook-ceph
+Storage:    RBD (block)
+
+This command set covers most day-to-day Rook Ceph administration and troubleshooting.

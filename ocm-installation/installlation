@@ -1,0 +1,955 @@
+# Open Cluster Management (OCM) – Installation, Managed Cluster Registration and Policy Add-ons
+
+## 1. Environment
+
+Example environment:
+
+```bash
+# Hub cluster context
+export CTX_HUB_CLUSTER="kubernetes-admin@kubernetes"
+
+# Managed cluster name in OCM
+export MANAGED_CLUSTER_NAME="ocm-cluster1"
+
+# Kubernetes context of the managed cluster
+export CTX_MANAGED_CLUSTER="<managed-cluster-context>"
+```
+
+Check the clusteradm version:
+
+```bash
+clusteradm version
+```
+
+Expected:
+
+```text
+clusteradm      version :v1.3.1-0-g90bdc31
+default bundle  version :1.3.1
+```
+
+---
+
+# 2. Install/Initialize the OCM Hub
+
+If OCM is not already installed on the hub:
+
+```bash
+clusteradm init \
+  --wait \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+If you want to pin the OCM bundle version:
+
+```bash
+clusteradm init \
+  --bundle-version=1.3.1 \
+  --wait \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+OCM's `clusteradm init` installs the hub-side OCM control-plane components and generates the managed-cluster join command.
+
+Verify:
+
+```bash
+kubectl get clustermanager \
+  --context "${CTX_HUB_CLUSTER}"
+
+kubectl get pods \
+  -n open-cluster-management \
+  --context "${CTX_HUB_CLUSTER}"
+
+kubectl get pods \
+  -n open-cluster-management-hub \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+---
+
+# 3. Get the Managed Cluster Join Command
+
+On the hub:
+
+```bash
+clusteradm get token \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+This generates the `clusteradm join` command containing the bootstrap token.
+
+The generated command will look similar to:
+
+```bash
+clusteradm join \
+  --hub-token <TOKEN> \
+  --hub-apiserver https://<HUB-API-ENDPOINT>:6443 \
+  --wait \
+  --cluster-name "ocm-cluster1" \
+  --context "${CTX_MANAGED_CLUSTER}"
+```
+
+The important requirement is that the hub API endpoint must be reachable from the managed cluster. OCM documents this as an outbound connection from the managed cluster to the hub API server.
+
+For your environment, the hub endpoint was:
+
+```text
+https://192.168.2.10:6443
+```
+
+---
+
+# 4. Join the Managed Cluster
+
+Run the generated `clusteradm join` command against the managed-cluster context.
+
+Example:
+
+```bash
+clusteradm join \
+  --hub-token <TOKEN> \
+  --hub-apiserver https://192.168.2.10:6443 \
+  --wait \
+  --cluster-name "ocm-cluster1" \
+  --context "${CTX_MANAGED_CLUSTER}"
+```
+
+Do NOT use `--force-internal-endpoint-lookup` unless your deployment specifically requires internal endpoint resolution. For a normal managed cluster that can reach the hub API endpoint, use the network-accessible hub address.
+
+Verify the OCM agents on the managed cluster:
+
+```bash
+kubectl get pods \
+  -n open-cluster-management-agent \
+  --context "${CTX_MANAGED_CLUSTER}"
+```
+
+Expected:
+
+```text
+klusterlet-registration-agent-xxxxx    1/1   Running
+klusterlet-work-agent-xxxxx            1/1   Running
+```
+
+---
+
+# 5. Accept the Managed Cluster on the Hub
+
+On the hub:
+
+```bash
+clusteradm accept \
+  --clusters "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+The `accept` operation approves the registration and creates the required managed-cluster namespace/RBAC resources on the hub.
+
+Verify:
+
+```bash
+kubectl get managedcluster \
+  "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Expected:
+
+```text
+NAME           HUB ACCEPTED   MANAGED CLUSTER URLS   JOINED   AVAILABLE
+ocm-cluster1   true            ...                    True     True
+```
+
+Also verify:
+
+```bash
+kubectl get managedcluster -o wide \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+---
+
+# 6. Verify the Managed Cluster Namespace
+
+On the hub:
+
+```bash
+kubectl get ns "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Expected:
+
+```text
+NAME           STATUS   AGE
+ocm-cluster1   Active   ...
+```
+
+This namespace is important because OCM uses the managed-cluster namespace to hold resources such as:
+
+* ManagedClusterAddOn
+* ManifestWork
+* RBAC resources
+* other cluster-specific OCM objects
+
+---
+
+# 7. Install Governance Policy Framework on the Hub
+
+Install the governance policy framework hub components:
+
+```bash
+clusteradm install hub-addon \
+  --names governance-policy-framework \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Verify:
+
+```bash
+kubectl get deployments \
+  -n open-cluster-management \
+  --context "${CTX_HUB_CLUSTER}" | \
+grep -E 'governance-policy|policy-propagator'
+```
+
+Expected components include:
+
+```text
+governance-policy-addon-controller
+governance-policy-propagator
+```
+
+Verify pods:
+
+```bash
+kubectl get pods \
+  -n open-cluster-management \
+  --context "${CTX_HUB_CLUSTER}" | \
+grep -E 'governance-policy|policy-propagator'
+```
+
+OCM documents `clusteradm install hub-addon --names governance-policy-framework` for installing the policy framework controllers on the hub.
+
+---
+
+# 8. Enable Governance Policy Framework on the Managed Cluster
+
+From the hub:
+
+```bash
+clusteradm addon enable \
+  --names governance-policy-framework \
+  --clusters "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Verify:
+
+```bash
+kubectl get managedclusteraddon \
+  -n "${MANAGED_CLUSTER_NAME}" \
+  governance-policy-framework \
+  -o wide \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Expected:
+
+```text
+NAME                          AVAILABLE   DEGRADED   PROGRESSING
+governance-policy-framework   True                    False
+```
+
+---
+
+# 9. Enable Configuration Policy Controller
+
+From the hub:
+
+```bash
+clusteradm addon enable \
+  --names config-policy-controller \
+  --clusters "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Verify:
+
+```bash
+kubectl get managedclusteraddon \
+  -n "${MANAGED_CLUSTER_NAME}" \
+  config-policy-controller \
+  -o wide \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Expected:
+
+```text
+NAME                       AVAILABLE   DEGRADED   PROGRESSING
+config-policy-controller   True                    False
+```
+
+OCM's configuration-policy documentation uses this same `clusteradm addon enable` procedure.
+
+---
+
+# 10. Verify Policy Add-on Pods on the Managed Cluster
+
+Run against the managed cluster:
+
+```bash
+kubectl get pods \
+  -n open-cluster-management-agent-addon \
+  --context "${CTX_MANAGED_CLUSTER}"
+```
+
+Expected:
+
+```text
+config-policy-controller-xxxxx
+governance-policy-framework-xxxxx
+```
+
+Both should show:
+
+```text
+1/1   Running
+```
+
+---
+
+# 11. Verify the Add-ons from the Hub
+
+```bash
+kubectl get clustermanagementaddon \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Expected to include:
+
+```text
+config-policy-controller
+governance-policy-framework
+```
+
+Then:
+
+```bash
+kubectl get managedclusteraddon \
+  -n "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Expected:
+
+```text
+config-policy-controller       True
+governance-policy-framework    True
+```
+
+---
+
+# 12. Verify ManifestWorks
+
+OCM deploys add-on resources to the managed cluster through ManifestWorks.
+
+Run on the hub:
+
+```bash
+kubectl get manifestwork \
+  -n "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+For example:
+
+```text
+addon-config-policy-controller-deploy-0
+addon-governance-policy-framework-deploy-0
+```
+
+---
+
+# 13. Create/Verify a Placement
+
+For a policy to be delivered to a managed cluster, use a Placement and PlacementBinding.
+
+Example:
+
+```bash
+kubectl get placement -A \
+  --context "${CTX_HUB_CLUSTER}"
+
+kubectl get placementdecision -A \
+  --context "${CTX_HUB_CLUSTER}"
+
+kubectl get placementbinding -A \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Verify that the Placement selects:
+
+```text
+ocm-cluster1
+```
+
+---
+
+# 14. Verify OCM Policy Resources
+
+IMPORTANT:
+
+Do not rely on:
+
+```bash
+kubectl get policy
+```
+
+on this environment because there are multiple policy APIs/resources, including Kyverno.
+
+Use the full OCM resource:
+
+```bash
+kubectl get policies.policy.open-cluster-management.io -A \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+For a specific policy:
+
+```bash
+kubectl get policies.policy.open-cluster-management.io \
+  -n default \
+  autosys-resource-reader-policy \
+  -o yaml \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+---
+
+# 15. Verify the Replicated Policy
+
+The root policy is normally in its original namespace, while the replicated policy appears in the managed-cluster namespace.
+
+Check:
+
+```bash
+kubectl get policies.policy.open-cluster-management.io \
+  -n "${MANAGED_CLUSTER_NAME}" \
+  default.autosys-resource-reader-policy \
+  -o jsonpath='{.status}' | jq \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Expected:
+
+```json
+{
+  "compliant": "Compliant"
+}
+```
+
+Check the root policy:
+
+```bash
+kubectl get policies.policy.open-cluster-management.io \
+  -n default \
+  autosys-resource-reader-policy \
+  -o jsonpath='{.status}' | jq \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Expected:
+
+```json
+{
+  "compliant": "Compliant",
+  "status": [
+    {
+      "clustername": "ocm-cluster1",
+      "clusternamespace": "ocm-cluster1",
+      "compliant": "Compliant"
+    }
+  ]
+}
+```
+
+---
+
+# 16. Incident Fix – Namespace Stuck in Terminating
+
+### Problem
+
+The error was:
+
+```text
+managedclusteraddons.addon.open-cluster-management.io
+"governance-policy-framework" is forbidden:
+unable to create new content in namespace ocm-cluster1
+because it is being terminated
+```
+
+The root cause was:
+
+```text
+ocm-cluster1 namespace = Terminating
+```
+
+The namespace contained resources with OCM cleanup finalizers, including:
+
+```text
+manifestwork
+rolebinding
+```
+
+and:
+
+```text
+cluster.open-cluster-management.io/manifest-work-cleanup
+```
+
+---
+
+# 17. Diagnose a Terminating Managed-Cluster Namespace
+
+Check:
+
+```bash
+kubectl get ns "${MANAGED_CLUSTER_NAME}" -o yaml
+```
+
+Look for:
+
+```yaml
+deletionTimestamp:
+phase: Terminating
+```
+
+Check remaining namespaced resources:
+
+```bash
+kubectl api-resources --verbs=list --namespaced -o name | while read r; do
+  kubectl get "$r" \
+    -n "${MANAGED_CLUSTER_NAME}" \
+    --ignore-not-found \
+    -o name 2>/dev/null
+done
+```
+
+Check ManifestWorks:
+
+```bash
+kubectl get manifestwork \
+  -n "${MANAGED_CLUSTER_NAME}"
+```
+
+Check ManagedClusterAddOns:
+
+```bash
+kubectl get managedclusteraddon \
+  -n "${MANAGED_CLUSTER_NAME}"
+```
+
+Check the ManagedCluster:
+
+```bash
+kubectl get managedcluster \
+  "${MANAGED_CLUSTER_NAME}" \
+  -o jsonpath='deletionTimestamp={.metadata.deletionTimestamp}{"\n"}finalizers={.metadata.finalizers}{"\n"}'
+```
+
+---
+
+# 18. Correct Recovery Procedure
+
+If the managed cluster is intentionally being removed, allow OCM's cleanup process to complete.
+
+The correct cleanup order is:
+
+```text
+ManagedClusterAddOn
+        ↓
+ManifestWork
+        ↓
+cluster namespace cleanup
+        ↓
+namespace deletion completes
+```
+
+OCM specifically documents that `ManagedClusterAddOns` are deleted first, followed by `ManifestWorks`, to avoid resources being stuck in a terminating namespace.
+
+Therefore:
+
+### DO NOT immediately force-delete the namespace.
+
+First allow OCM cleanup to finish.
+
+Monitor:
+
+```bash
+kubectl get ns "${MANAGED_CLUSTER_NAME}" -w
+```
+
+When cleanup is complete, the namespace should disappear:
+
+```text
+Error from server (NotFound):
+namespaces "ocm-cluster1" not found
+```
+
+At that point the old cluster registration is completely removed.
+
+---
+
+# 19. Re-register the Managed Cluster After Cleanup
+
+Once:
+
+```bash
+kubectl get ns "${MANAGED_CLUSTER_NAME}"
+```
+
+returns:
+
+```text
+NotFound
+```
+
+perform the normal registration again:
+
+```bash
+clusteradm join \
+  --hub-token <TOKEN> \
+  --hub-apiserver https://192.168.2.10:6443 \
+  --wait \
+  --cluster-name "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_MANAGED_CLUSTER}"
+```
+
+Then accept on the hub:
+
+```bash
+clusteradm accept \
+  --clusters "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Wait until:
+
+```bash
+kubectl get managedcluster \
+  "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+shows:
+
+```text
+HUB ACCEPTED   JOINED   AVAILABLE
+true           True     True
+```
+
+---
+
+# 20. Re-enable the Policy Add-ons
+
+After the namespace is Active again:
+
+```bash
+kubectl get ns "${MANAGED_CLUSTER_NAME}"
+```
+
+Expected:
+
+```text
+Active
+```
+
+Enable:
+
+```bash
+clusteradm addon enable \
+  --names governance-policy-framework \
+  --clusters "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+and:
+
+```bash
+clusteradm addon enable \
+  --names config-policy-controller \
+  --clusters "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Then verify:
+
+```bash
+kubectl get managedclusteraddon \
+  -n "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+---
+
+# 21. Final OCM Health Check
+
+Run the following checklist.
+
+### Hub
+
+```bash
+kubectl get clustermanager \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+```bash
+kubectl get pods \
+  -n open-cluster-management \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+```bash
+kubectl get pods \
+  -n open-cluster-management-hub \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+### Managed Cluster
+
+```bash
+kubectl get managedcluster \
+  "${MANAGED_CLUSTER_NAME}" \
+  -o wide \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Expected:
+
+```text
+HUB ACCEPTED=true
+JOINED=True
+AVAILABLE=True
+```
+
+### OCM agents
+
+```bash
+kubectl get pods \
+  -n open-cluster-management-agent \
+  --context "${CTX_MANAGED_CLUSTER}"
+```
+
+Expected:
+
+```text
+klusterlet-registration-agent    1/1 Running
+klusterlet-work-agent            1/1 Running
+```
+
+### Policy add-ons
+
+```bash
+kubectl get pods \
+  -n open-cluster-management-agent-addon \
+  --context "${CTX_MANAGED_CLUSTER}"
+```
+
+Expected:
+
+```text
+config-policy-controller
+governance-policy-framework
+```
+
+Both:
+
+```text
+1/1 Running
+```
+
+### Add-on status
+
+```bash
+kubectl get managedclusteraddon \
+  -n "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Expected:
+
+```text
+config-policy-controller       True
+governance-policy-framework    True
+```
+
+### ManifestWorks
+
+```bash
+kubectl get manifestwork \
+  -n "${MANAGED_CLUSTER_NAME}" \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+### Policies
+
+```bash
+kubectl get policies.policy.open-cluster-management.io -A \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+### Policy compliance
+
+```bash
+kubectl get policies.policy.open-cluster-management.io \
+  -n default \
+  autosys-resource-reader-policy \
+  -o jsonpath='{.status.compliant}{"\n"}' \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+Expected:
+
+```text
+Compliant
+```
+
+---
+
+# 22. Final Expected Architecture
+
+```text
+                    OCM HUB
+        ┌─────────────────────────────┐
+        │ open-cluster-management     │
+        │                             │
+        │ ClusterManager              │
+        │ Addon Manager               │
+        │ Policy Propagator           │
+        │ Governance Policy Controller│
+        └──────────────┬──────────────┘
+                       │
+                       │ OCM registration
+                       │ + ManifestWork
+                       ▼
+              ┌────────────────────┐
+              │   ocm-cluster1     │
+              │   Managed Cluster  │
+              │                    │
+              │ Klusterlet         │
+              │ Work Agent         │
+              │ Registration Agent │
+              │                    │
+              │ Policy Add-ons     │
+              │ ├─ config-policy   │
+              │ └─ governance      │
+              └────────────────────┘
+                       │
+                       ▼
+              Kubernetes resources
+              / ClusterRoles
+              / ConfigurationPolicy
+              / other policies
+```
+
+# 23. Most Important Commands – Quick Reference
+
+```bash
+# Check clusteradm
+clusteradm version
+
+# Initialize hub
+clusteradm init --wait --context "${CTX_HUB_CLUSTER}"
+
+# Get managed-cluster join command
+clusteradm get token --context "${CTX_HUB_CLUSTER}"
+
+# Join managed cluster
+clusteradm join \
+  --hub-token <TOKEN> \
+  --hub-apiserver https://192.168.2.10:6443 \
+  --wait \
+  --cluster-name "ocm-cluster1" \
+  --context "${CTX_MANAGED_CLUSTER}"
+
+# Accept managed cluster
+clusteradm accept \
+  --clusters ocm-cluster1 \
+  --context "${CTX_HUB_CLUSTER}"
+
+# Verify managed cluster
+kubectl get managedcluster ocm-cluster1 -o wide \
+  --context "${CTX_HUB_CLUSTER}"
+
+# Install governance framework on hub
+clusteradm install hub-addon \
+  --names governance-policy-framework \
+  --context "${CTX_HUB_CLUSTER}"
+
+# Enable governance framework
+clusteradm addon enable \
+  --names governance-policy-framework \
+  --clusters ocm-cluster1 \
+  --context "${CTX_HUB_CLUSTER}"
+
+# Enable config policy controller
+clusteradm addon enable \
+  --names config-policy-controller \
+  --clusters ocm-cluster1 \
+  --context "${CTX_HUB_CLUSTER}"
+
+# Verify addons
+kubectl get managedclusteraddon \
+  -n ocm-cluster1 \
+  --context "${CTX_HUB_CLUSTER}"
+
+# Verify managed-cluster OCM agents
+kubectl get pods \
+  -n open-cluster-management-agent \
+  --context "${CTX_MANAGED_CLUSTER}"
+
+# Verify policy addons
+kubectl get pods \
+  -n open-cluster-management-agent-addon \
+  --context "${CTX_MANAGED_CLUSTER}"
+
+# Verify ManifestWorks
+kubectl get manifestwork \
+  -n ocm-cluster1 \
+  --context "${CTX_HUB_CLUSTER}"
+
+# Verify OCM policies
+kubectl get policies.policy.open-cluster-management.io -A \
+  --context "${CTX_HUB_CLUSTER}"
+```
+
+## Success Criteria
+
+The OCM environment is considered healthy when all of the following are true:
+
+```text
+ManagedCluster:
+    HUB ACCEPTED = true
+    JOINED        = True
+    AVAILABLE     = True
+
+ManagedClusterAddOns:
+    governance-policy-framework = True
+    config-policy-controller    = True
+
+Managed cluster pods:
+    klusterlet-registration-agent = Running
+    klusterlet-work-agent         = Running
+    governance-policy-framework   = Running
+    config-policy-controller      = Running
+
+Policy:
+    Root policy       = Compliant
+    Replicated policy = Compliant
+
+ManifestWork:
+    Present and successfully applied
+```

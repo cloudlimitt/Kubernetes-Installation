@@ -73,3 +73,17 @@ spec:
         labelSelector:
           matchExpressions: []
 
+========================================================================================================
+ kubectl get policies.policy.open-cluster-management.io -A
+NAMESPACE      NAME                                     REMEDIATION ACTION   COMPLIANCE STATE   AGE
+default        autosys-resource-reader-policy           enforce              Compliant          100m
+ocm-cluster1   default.autosys-resource-reader-policy   enforce              Compliant          28m
+========================================================================================================
+kubectl get managedclusters
+NAME           HUB ACCEPTED   MANAGED CLUSTER URLS        JOINED   AVAILABLE   AGE
+ocm-cluster1   true           https://192.168.2.10:6443   True     True        46d
+[root@kube-lb-node ~]# kubectl get managedclustersets.cluster.open-cluster-management.io
+NAME      EMPTY   AGE
+default   False   46d
+global    False   46d
+

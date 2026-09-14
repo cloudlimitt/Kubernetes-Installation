@@ -1,4 +1,3 @@
- policy-cm-reader.yaml
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -6,6 +5,7 @@ metadata:
 spec:
   rules:
     - name: generate-autosys-resource-reader-rolebinding
+
       match:
         any:
           - resources:
@@ -13,6 +13,12 @@ spec:
                 - ServiceAccount
               names:
                 - "*-sa"
+
+      preconditions:
+        all:
+          - key: "{{request.object.metadata.name}}"
+            operator: Equals
+            value: "{{request.object.metadata.namespace}}-sa"
 
       generate:
         generateExisting: true

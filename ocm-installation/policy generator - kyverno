@@ -1,0 +1,28 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: autosys-resource-reader-policy
+spec:
+  rules:
+    - name: generate-custom-rolebinding
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+      generate:
+        generateExisting: true
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        name: autosys-resource-reader-rolebinding
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          subjects:
+            - kind: ServiceAccount
+              name: "{{request.object.metadata.name}}-sa"
+              namespace: "{{request.object.metadata.name}}"
+          roleRef:
+            kind: ClusterRole
+            name: autosys-resource-reader-clusterrole
+            apiGroup: rbac.authorization.k8s.io
